@@ -19,25 +19,10 @@ FROM gcr.io/distroless/cc-debian12
 WORKDIR /app
 
 # Copy the compiled binary from the builder stage
-COPY --from=builder /app/target/x86_64-unknown-linux-gnu/release/hello-rust .
+COPY --from=builder /app/target/x86_64-unknown-linux-gnu/release/sysutils-rust .
 
 # Expose the port the application listens on
 EXPOSE 8080
 
 # Run the application
-CMD ["./hello-rust"]
-
-# Use a minimal base image for the final stage
-FROM gcr.io/distroless/cc-debian12
-
-# Set the working directory
-WORKDIR /app
-
-# Copy the compiled binary from the builder stage
-COPY --from=builder /app/target/x86_64-unknown-linux-gnu/release/hello-rust .
-
-# Expose the port the application listens on
-EXPOSE 8080
-
-# Run the application
-CMD ["./hello-rust"]
+CMD ["./sysutils-rust"]

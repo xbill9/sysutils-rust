@@ -1,0 +1,11 @@
+ {
+    "mcpServers": {
+      "sysutils": {
+        "command": "$HOME/sysutils-rust/target/release/sysutils-rust",
+        "args": ["--prebuilt","--stdio"],
+        "env": {
+          "RUST_LOG": "trace"
+        }
+      }
+    }
+  }

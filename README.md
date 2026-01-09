@@ -1,42 +1,99 @@
-# mcp-stdio-rust
+# sysutils-rust
 
-A Rust application that interacts via standard input/output (stdio) using the MCP protocol.
+A Rust-based [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server that provides system utility tools. This application runs over standard input/output (stdio) and allows MCP clients to access detailed system information.
 
 ## Overview
 
-This project implements a command-line application in Rust that communicates through standard input and standard output. It's designed to process incoming commands or data from stdin and produce responses or results to stdout, adhering to a defined protocol.
+`sysutils-rust` implements an MCP server using the `rmcp` library. It exposes tools to retrieve system metrics such as kernel version, CPU usage, memory statistics, and disk information.
+
+## Features
+
+*   **MCP Protocol Support**: Implements the Model Context Protocol over stdio.
+*   **System Information**: Provides a detailed report of the host system.
+    *   **Tool**: `get_system_info`
+    *   **Data**: OS version, Kernel, CPU cores, Memory usage (RAM/Swap), and Disk usage.
 
 ## Getting Started
 
 ### Prerequisites
 
-Ensure you have the Rust toolchain installed:
-
-*   [Rust Toolchain](https://www.rust-lang.org/tools/install)
+*   [Rust Toolchain](https://www.rust-lang.org/tools/install) (latest stable)
+*   [Make](https://www.gnu.org/software/make/) (optional, for convenience)
 
 ### Build
 
-To build the project:
+You can build the project using Cargo or the provided Makefile.
 
+**Using Cargo:**
 ```bash
 cargo build --release
 ```
 
-### Run
-
-To run the application, you can pipe input to it and capture its output:
-
+**Using Makefile:**
 ```bash
-echo "your_input_here" | target/release/mcp-stdio-rust
+make release
 ```
 
-Or, for interactive use:
+The executable will be located at `target/release/sysutils-rust`.
+
+## Usage
+
+### As an MCP Server
+
+This application is designed to be run by an MCP client (such as Claude Desktop or an MCP-compliant IDE extension).
+
+**Example Configuration (Claude Desktop):**
+
+Add the following to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "sysutils": {
+      "command": "/absolute/path/to/sysutils-rust/target/release/sysutils-rust",
+      "args": []
+    }
+  }
+}
+```
+
+### Running Locally
+
+To run the server manually (waiting for JSON-RPC messages on stdin):
 
 ```bash
-target/release/mcp-stdio-rust
+make run
+# or
+./target/release/sysutils-rust
 ```
-Then type your input and press Enter. The application will print its response to stdout.
 
-## Protocol Details
+Note: The server will start and wait for input. You won't see a prompt. It communicates via JSON-RPC messages.
 
-This impliments a minimially viable MCP stdio server in Rust.
+### CLI Usage
+
+You can also run the system information tool directly from the command line:
+
+```bash
+cargo run -- info
+# or
+./target/release/sysutils-rust info
+```
+This will print the system information report to stdout and exit.
+
+## Development
+
+The project includes a `Makefile` to streamline development tasks.
+
+*   **Format Code**: `make fmt`
+*   **Lint Code**: `make clippy`
+*   **Run Tests**: `make test`
+*   **Clean Build**: `make clean`
+
+## Deployment
+
+### Docker & Google Cloud Run
+
+The project is containerized and ready for deployment to Google Cloud Run, although as a stdio MCP server, it is primarily intended for local or sidecar usage.
+
+*   **Build Docker Image**: `make docker-build`
+*   **Deploy to Cloud Build**: `make deploy` (Requires Google Cloud SDK)

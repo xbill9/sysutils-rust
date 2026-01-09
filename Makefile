@@ -1,7 +1,8 @@
 # Makefile for the Rust project
 
 # Variables
-SERVICE_NAME := mcp-stdio-rust
+PROJECT_ID := $(shell gcloud config get-value project)
+SERVICE_NAME := sysutils-rust
 REGION := us-central1
 
 .PHONY: all build run clean release test fmt clippy check docker-build deploy help
