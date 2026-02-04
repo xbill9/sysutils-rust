@@ -1,4 +1,4 @@
-# Gemini Workspace for `sysutils-rust`
+# Gemini Workspace for `sysutils-rust` (v0.2.0)
 
 You are a Rust Developer working with Google Cloud.
 You should follow Rust Best practices.
@@ -13,11 +13,20 @@ This document provides a developer-focused overview of the `sysutils-rust` proje
 ### Key Technologies
 
 *   **Language:** [Rust](https://www.rust-lang.org/) (Edition 2024)
-*   **MCP SDK:** [rmcp](https://crates.io/crates/rmcp) (Rust Model Context Protocol)
-*   **System Info:** [sysinfo](https://crates.io/crates/sysinfo)
+*   **MCP SDK:** [rmcp](https://crates.io/crates/rmcp) (v0.14.0) - Uses macros for tool definition and routing.
+*   **System Info:** [sysinfo](https://crates.io/crates/sysinfo) (v0.37.x)
 *   **Async Runtime:** [Tokio](https://tokio.rs/)
-*   **Serialization:** [Serde](https://serde.rs/) & [Schemars](https://crates.io/crates/schemars)
-*   **Containerization:** [Docker](https://www.docker.com/)
+*   **Serialization:** [Serde](https://serde.rs/) & [Schemars](https://crates.io/crates/schemars) (for JSON-RPC and schema generation)
+*   **Logging:** [Tracing](https://crates.io/crates/tracing) & [Tracing-Subscriber](https://crates.io/crates/tracing-subscriber) (JSON format to stderr)
+*   **Containerization:** [Docker](https://www.docker.com/) (Distroless base)
+
+## Architecture
+
+*   **`src/main.rs`**: Single entry point. 
+    *   `SysUtils` struct: Implements `ServerHandler` and `tool_router`.
+    *   `get_system_info`: The primary MCP tool.
+    *   `collect_system_info`: Shared logic for both MCP tool and CLI `info` command.
+    *   `main`: Handles CLI arguments and initializes the MCP server on stdio.
 
 ## Getting Started
 
@@ -29,51 +38,44 @@ This project uses a `Makefile` to simplify common development tasks.
 *   [Docker](https://docs.docker.com/get-docker/) (for container builds)
 *   [Google Cloud SDK](https://cloud.google.com/sdk/docs/install) (for deployment)
 
-### Initial Setup
+### Environment Setup
+
+Use the provided scripts for GCP and environment configuration:
+- `source ./set_env.sh`: Sets up GCP project IDs, regions, and `RUST_LOG=trace`.
+- `./set_adc.sh`: Authenticates with Google Application Default Credentials.
+
+### Initial Build
 
 1.  **Install Dependencies:**
     ```bash
     cargo build
     ```
 
-2.  **Run the application locally:**
+2.  **Run the application locally (MCP mode):**
     ```bash
     make run
     ```
-    *Note: The server runs on stdio and waits for JSON-RPC messages. It does not bind to a network port by default.*
+    *Note: The server runs on stdio and waits for JSON-RPC messages.*
+
+3.  **Run CLI Info command:**
+    ```bash
+    cargo run -- info
+    ```
 
 ## Development Workflow
 
-The `Makefile` provides targets for common development tasks.
-
-### Building the Project
-
-*   **Development Build:**
-    ```bash
-    make build
-    ```
-*   **Release Build:**
-    ```bash
-    make release
-    ```
-
 ### Code Quality
 
-*   **Formatting:**
-    ```bash
-    make fmt
-    ```
-*   **Linting:**
-    ```bash
-    make clippy
-    ```
-    *Ensure `ktlint` equivalent for Rust (rustfmt/clippy) is passed.*
+*   **Formatting:** `make fmt`
+*   **Linting:** `make clippy`
+*   **Checking:** `make check`
 
 ### Testing
 
 ```bash
 make test
 ```
+Current tests focus on schema generation verification.
 
 ## Deployment
 
@@ -87,19 +89,20 @@ To manually trigger a deployment to Google Cloud Build:
 make deploy
 ```
 
-This submits a build that creates a Docker image and pushes it to the Container Registry.
+This submits a build that creates a Docker image (`gcr.io`) and deploys it to Cloud Run.
 
 ### Dockerfile
 
 The `Dockerfile` employs a multi-stage build:
-1.  **Builder:** Compiles the Rust binary using a standard Rust image.
-2.  **Runtime:** Copies the binary to a `distroless` image for a minimal and secure footprint.
+1.  **Builder:** Compiles the Rust binary using `rust` image.
+2.  **Runtime:** Copies the binary to a `gcr.io/distroless/cc-debian12` image.
+*Note:* The Dockerfile currently exposes port 8080, though the app primarily uses stdio.
 
 ## Interacting with Gemini
 
-You can use Gemini to help you with various tasks in this project. Here are relevant examples:
+You can use Gemini to help you with various tasks in this project. Relevant examples:
 
-*   "Add a new tool to `main.rs` that checks disk usage for a specific path."
-*   "Explain how the `rmcp` macros work in `SysUtils` struct."
-*   "Write a test for the `get_system_info` function."
-*   "Optimize the Dockerfile for smaller image size."
+*   "Add a new tool to `SysUtils` in `main.rs` that checks disk usage for a specific path."
+*   "Explain how `LazyLock` is used for `SYSTEM_INFO_SCHEMA`."
+*   "Modify `collect_system_info` to include network interface information."
+*   "Fix the Dockerfile to use the correct target for the release build."

@@ -7,8 +7,20 @@ use rmcp::{
 use sysinfo::{Disks, System};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+use std::sync::{Arc, LazyLock};
+
 #[derive(Debug, serde::Deserialize, schemars::JsonSchema)]
 struct GetSystemInfoRequest {}
+
+static SYSTEM_INFO_SCHEMA: LazyLock<Arc<serde_json::Map<String, serde_json::Value>>> = LazyLock::new(|| {
+    let settings = schemars::generate::SchemaSettings::draft07();
+    let generator = settings.into_generator();
+    let schema = generator.into_root_schema_for::<GetSystemInfoRequest>();
+    let mut val = serde_json::to_value(schema).unwrap();
+    let obj = val.as_object_mut().unwrap();
+    obj.remove("$schema");
+    Arc::new(obj.clone())
+});
 
 #[derive(Clone)]
 struct SysUtils {
@@ -63,7 +75,7 @@ impl SysUtils {
         }
     }
 
-    #[tool(description = "Get a detailed system information report including kernel, cores, memory, and disk usage.")]
+    #[tool(description = "Get a detailed system information report including kernel, cores, memory, and disk usage.", input_schema = "SYSTEM_INFO_SCHEMA.clone()")]
     async fn get_system_info(
         &self,
         _params: Parameters<GetSystemInfoRequest>,
@@ -113,4 +125,14 @@ async fn main() -> Result<()> {
     server.waiting().await?;
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_schema_generation() {
+        println!("SCHEMA: {}", serde_json::to_string_pretty(&*SYSTEM_INFO_SCHEMA).unwrap());
+    }
 }
